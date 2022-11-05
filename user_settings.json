@@ -1,0 +1,8 @@
+{
+    "beginDate": "2023-04-17",
+    "endDate": "2023-05-27",
+    "maxDays": 7,
+    "origin": "AMS",
+    "destination": "ICN",
+    "alertPrice": 10000
+}

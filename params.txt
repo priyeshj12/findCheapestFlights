@@ -1,0 +1,10 @@
+{
+        "f.sid": "-5048012064093525904",
+        "bl": "boq_travel-frontend-ui_20221102.02_p0",
+        "hl": "nl",
+        "soc-app": "162",
+        "soc-platform": "1",
+        "soc-device": "1",
+        "_reqid": "2203277",
+        "rt": "c",
+}
