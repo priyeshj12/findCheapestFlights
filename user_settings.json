@@ -4,5 +4,6 @@
     "maxDays": 7,
     "origin": "AMS",
     "destination": "ICN",
-    "alertPrice": 10000
+    "alertPrice": 700,
+    "discordWebhook": "https://discord.com/api/webhooks/..."
 }

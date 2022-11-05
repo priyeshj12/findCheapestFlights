@@ -1,5 +1,5 @@
-import requests, datetime, time, re, json
-import ast
+import requests, datetime, ast, re, json, time
+from discord_webhook import DiscordWebhook, DiscordEmbed
   
 # reading the data from the file
 with open('headers.txt') as f:
@@ -18,6 +18,7 @@ origin = userSettings['origin']
 destination = userSettings['destination']
 maxDays = userSettings['maxDays']
 alertPrice = userSettings['alertPrice']
+webhookUrl = userSettings['discordWebhook']
 
 
 currentDays = 1
@@ -26,6 +27,7 @@ dates = [beginDate, endDate]
 ## Total information:
 allPricesDict = {}
 
+## Helper functions:
 def transformDate(dates):
     beginDate, endDate = list(dates)
     beginDate = datetime.datetime.strptime(beginDate, '%Y-%m-%d').date()
@@ -56,6 +58,30 @@ def formatFlightPrices(flightPrices, currentDays):
     # return top 3 cheapest flights with dates:
     return {k: pricesDict[k] for k in list(pricesDict)[:3]}
 
+
+def sendWebhook(flight, origin, destination):
+
+    originDate, daysToAdd = flight[0].split(' - ')[0], flight[0].split(' - ')[1].replace(" days", "")
+    price = flight[1]
+    beginDate = datetime.datetime.strptime(originDate, '%Y-%m-%d').date() 
+    endDate = beginDate + datetime.timedelta(days=int(daysToAdd))
+
+    webhook = DiscordWebhook(url=webhookUrl, rate_limit_retry=True,)
+
+    embed = DiscordEmbed(title="USE THIS TEXT TO GO TO GOOGLE FLIGHTS", url="https://www.google.com/travel/flights", description="Open Google Flights and search with dates below", color=0x64e6e8)
+    embed.set_timestamp()
+
+    embed.add_embed_field(name="Trip:", value=f'{origin} - {destination}')
+    embed.add_embed_field(name="Start date", value=str(beginDate), inline=True)
+    embed.add_embed_field(name="End date", value=str(endDate), inline=True)
+    embed.add_embed_field(name="Price", value=f'€{price},-', inline=False)
+    webhook.add_embed(embed)
+
+    response = webhook.execute()
+    json_response = json.loads(response.text)
+
+
+# Request function:
 def make_request(dates, currentDays, origin, destination):
     beginDate, endDate = list(dates)
     beginGraphDate, endGraphDate = transformDate(list(dates))
@@ -80,5 +106,6 @@ while currentDays <= maxDays:
 cheapestTenFlights = sorted(allPricesDict.items(), key=lambda x: int(x[1]))[:10]
 for event in cheapestTenFlights:
     if int(event[1]) < alertPrice:
+        sendWebhook(event, origin, destination)
         print(f"ALERT: {event[0]}: {event[1]}")
 
