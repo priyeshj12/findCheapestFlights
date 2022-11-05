@@ -5,5 +5,6 @@
     "origin": "AMS",
     "destination": "ICN",
     "alertPrice": 700,
-    "discordWebhook": "https://discord.com/api/webhooks/..."
+    "discordWebhook": "https://discord.com/api/webhooks/...",
+    "refreshRate": 2
 }

@@ -19,9 +19,9 @@ destination = userSettings['destination']
 maxDays = userSettings['maxDays']
 alertPrice = userSettings['alertPrice']
 webhookUrl = userSettings['discordWebhook']
+refreshRate = userSettings['refreshRate']
 
 
-currentDays = 1
 dates = [beginDate, endDate]
 
 ## Total information:
@@ -97,15 +97,20 @@ def make_request(dates, currentDays, origin, destination):
         print("Error: Could not get flight prices")
 
 
-while currentDays <= maxDays:
-    make_request(dates, currentDays, origin, destination)
-    print(f'Fetching prices for {currentDays} days')
-    currentDays += 1
 
-## return top 10 cheapest flights with dates from allPricesDict:
-cheapestTenFlights = sorted(allPricesDict.items(), key=lambda x: int(x[1]))[:10]
-for event in cheapestTenFlights:
-    if int(event[1]) < alertPrice:
-        sendWebhook(event, origin, destination)
-        print(f"ALERT: {event[0]}: {event[1]}")
+while True:
+    currentDays = 1
+    while currentDays <= maxDays:
+        make_request(dates, currentDays, origin, destination)
+        print(f'Fetching prices for {currentDays} days')
+        currentDays += 1
+
+    ## return top 10 cheapest flights with dates from allPricesDict:
+    cheapestTenFlights = sorted(allPricesDict.items(), key=lambda x: int(x[1]))[:10]
+    for event in cheapestTenFlights:
+        if int(event[1]) < alertPrice:
+            sendWebhook(event, origin, destination)
+            print(f"ALERT: {event[0]}: {event[1]}")
+    print(f"Waiting {refreshRate} seconds...")
+    time.sleep(refreshRate)
 
