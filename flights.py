@@ -1,5 +1,6 @@
-import requests, datetime, ast, re, json, time
+import requests, ast, re, json, time
 from discord_webhook import DiscordWebhook, DiscordEmbed
+from datetime import datetime, timedelta
   
 # reading the data from the file
 with open('headers.txt') as f:
@@ -26,17 +27,18 @@ dates = [beginDate, endDate]
 
 ## Total information:
 allPricesDict = {}
+sentFlights = {}
 
 ## Helper functions:
 def transformDate(dates):
     beginDate, endDate = list(dates)
-    beginDate = datetime.datetime.strptime(beginDate, '%Y-%m-%d').date()
+    beginDate = datetime.strptime(beginDate, '%Y-%m-%d').date()
     
     if beginDate.today() != beginDate:
-        beginDate -= datetime.timedelta(days=8)
+        beginDate -= timedelta(days=8)
    
-    endDate = datetime.datetime.strptime(list(dates)[0], '%Y-%m-%d').date()
-    endDate += datetime.timedelta(days=52)
+    endDate = datetime.strptime(list(dates)[0], '%Y-%m-%d').date()
+    endDate += timedelta(days=52)
     
     return [beginDate, endDate]
 
@@ -63,8 +65,8 @@ def sendWebhook(flight, origin, destination):
 
     originDate, daysToAdd = flight[0].split(' - ')[0], flight[0].split(' - ')[1].replace(" days", "")
     price = flight[1]
-    beginDate = datetime.datetime.strptime(originDate, '%Y-%m-%d').date() 
-    endDate = beginDate + datetime.timedelta(days=int(daysToAdd))
+    beginDate = datetime.strptime(originDate, '%Y-%m-%d').date() 
+    endDate = beginDate + timedelta(days=int(daysToAdd))
 
     webhook = DiscordWebhook(url=webhookUrl, rate_limit_retry=True,)
 
@@ -99,7 +101,9 @@ def make_request(dates, currentDays, origin, destination):
 
 
 while True:
+    
     currentDays = 1
+    print(f"--------------------------------------- Checking for {currentDays} days -------------------------------------")
     while currentDays <= maxDays:
         make_request(dates, currentDays, origin, destination)
         print(f'Fetching prices for {currentDays} days')
@@ -107,10 +111,23 @@ while True:
 
     ## return top 10 cheapest flights with dates from allPricesDict:
     cheapestTenFlights = sorted(allPricesDict.items(), key=lambda x: int(x[1]))[:10]
+
+    
+    
     for event in cheapestTenFlights:
+        unix_timestamp = int(time.time())
+        date, price = event
+        event = date, price, unix_timestamp
         if int(event[1]) < alertPrice:
-            sendWebhook(event, origin, destination)
-            print(f"ALERT: {event[0]}: {event[1]}")
+            if date not in sentFlights:
+                sendWebhook(event, origin, destination)
+                sentFlights[date] = [price, unix_timestamp]
+                print(f"*NEW* ALERT: {event[0]}: {event[1]}")
+        if date in sentFlights:
+            if sentFlights[date][1] - 86400 > int(time.time()):
+                sendWebhook(event, origin, destination)
+                sentFlights[date] = [price, unix_timestamp]
+                print(f"*UPDATE* ALERT: {event[0]}: {event[1]}")
+
     print(f"Waiting {refreshRate} seconds...")
     time.sleep(refreshRate)
-
